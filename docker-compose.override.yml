@@ -10,6 +10,7 @@ services:
       - wallflower-hub
       - wallflower-chrome-node
     environment:
+      COMMAND:
       HUB_HOST: wallflower-hub
       HUB_PORT: 4444
     volumes:

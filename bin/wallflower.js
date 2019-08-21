@@ -39,7 +39,7 @@ async function status () {
   console.log(/wallflower-hub$/m.test(await exec('docker ps')) ? 'up' : 'down')
 }
 
-async function test () {
+async function test (...args) {
   await down(false)
   // spawn will throw on SIGINT
   try {
@@ -56,6 +56,7 @@ async function test () {
         cwd: WALLFLOWER_ROOT,
         env: {
           ...process.env,
+          COMMAND: ['test', ...args].join(' '),
           PROJECT_ROOT,
           WALLFLOWER_ROOT
         },
@@ -63,6 +64,7 @@ async function test () {
       }
     )
   } catch (e) {
+    // ignore SIGINT
   } finally {
     await down()
   }
