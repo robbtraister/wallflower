@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  wallflower-chrome-test:
+    build:
+      context: ${PROJECT_ROOT:-.}
+      dockerfile: ${WALLFLOWER_ROOT:-.}/Dockerfile
+    container_name: wallflower-chrome-test
+    depends_on:
+      - wallflower-hub
+      - wallflower-chrome-node
+    environment:
+      HUB_HOST: wallflower-hub
+      HUB_PORT: 4444
+    volumes:
+      - ${PROJECT_ROOT:-.}:/opt/project:rw
+      # this will prevent mapping from the host
+      - /opt/conductor/project/node_modules
+      - ${WALLFLOWER_ROOT:-.}:/opt/project/node_modules/wallflower:ro

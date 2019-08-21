@@ -1,0 +1,34 @@
+version: '3.4'
+
+x-node: &node
+  depends_on:
+    - wallflower-hub
+  environment:
+    HUB_HOST: wallflower-hub
+    HUB_PORT: 4444
+
+x-browser-node: &browser-node
+  <<: *node
+  volumes:
+    - /dev/shm:/dev/shm
+
+services:
+  wallflower-hub:
+    container_name: wallflower-hub
+    image: selenium/hub:3.141.59
+    ports:
+      - 4444:4444
+
+  wallflower-chrome-node:
+    <<: *browser-node
+    container_name: wallflower-chrome-node
+    image: selenium/node-chrome-debug:3.141.59
+    ports:
+      - 5900:5900
+
+  # wallflower-firefox-node:
+  #   <<: *browser-node
+  #   container_name: wallflower-firefox-node
+  #   image: selenium/node-firefox-debug:3.141.59
+  #   ports:
+  #     - 5901:5900
