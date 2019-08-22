@@ -43,7 +43,7 @@ async function spawn (cmd, args, options) {
     proc.on('exit', code => {
       process.removeListener('SIGINT', sigintListener)
       // ensure cursor is returned
-      console.log('\x1B[?25h')
+      process.stdout.write('\x1B[?25h')
 
       if (code === 0) {
         resolve()

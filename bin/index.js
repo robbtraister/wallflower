@@ -12,21 +12,31 @@ const IN_DOCKER = /^true$/i.test(process.env.IN_DOCKER)
 
 require('dotenv').config({ path: path.join(PROJECT_ROOT, '.env') })
 
+const COLORS = {
+  GREEN: '\x1b[32m',
+  RED: '\x1b[31m',
+  RESET: '\x1b[0m'
+}
+
 const READY_STEP = 500
 const readyURL = `http://${process.env.HUB_HOST || 'localhost'}:${process.env
   .HUB_PORT || '4444'}/wd/hub/status`
+
 async function waitForReady (timeout = 20000) {
+  process.stderr.write('Waiting for selenium ... ')
   for (let i = Math.ceil(timeout / READY_STEP); i > 0; i--) {
     try {
       const {
         value: { ready }
       } = await request(readyURL)
       if (ready) {
+        process.stderr.write(`${COLORS.GREEN}done${COLORS.RESET}\n`)
         return
       }
     } catch (_) {}
     await sleep(READY_STEP)
   }
+  process.stderr.write(`${COLORS.RED}timeout${COLORS.RESET}\n`)
   throw new Error('TIMEOUT')
 }
 
@@ -61,7 +71,7 @@ async function down (log = true) {
 }
 
 function help () {
-  return `${version()}
+  return `wallflower: ${version()}
 
   debug
   down
@@ -80,13 +90,13 @@ async function restart () {
   await up()
 }
 
-async function run (...args) {
-  if (args.length === 0 || args.indexOf('--') === 0) {
-    console.log('available scripts:')
+async function run (cmd, ...args) {
+  if (!cmd || cmd === '--') {
+    process.stderr.write('available scripts:\n')
     const { scripts } = require(path.join(PROJECT_ROOT, 'package.json'))
     Object.keys(scripts).forEach(scriptName => {
-      console.log(`  ${scriptName}`)
-      console.log(`    ${scripts[scriptName]}`)
+      process.stderr.write(`  ${scriptName}\n`)
+      process.stderr.write(`    ${scripts[scriptName]}\n`)
     })
   } else if (!IN_DOCKER) {
     // spawn will throw on SIGINT
@@ -106,7 +116,7 @@ async function run (...args) {
           cwd: WALLFLOWER_ROOT,
           env: {
             ...process.env,
-            COMMAND: args.join(' '),
+            COMMAND: [cmd, ...args].join(' '),
             PROJECT_ROOT,
             WALLFLOWER_ROOT
           },

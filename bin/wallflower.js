@@ -14,16 +14,37 @@ const {
   version
 } = require('.')
 
+function printHelp () {
+  process.stderr.write(help())
+}
+
+async function printStatus () {
+  const currentStatus = await status()
+  process.stderr.write('wallflower status: ')
+  process.stdout.write(currentStatus)
+  process.stderr.write('\n')
+}
+
+function printVersion () {
+  process.stderr.write('wallflower version: ')
+  process.stdout.write(version())
+  process.stderr.write('\n')
+}
+
 const commands = {
   debug,
   down,
-  help: () => console.log(help()),
+  // '-h': printHelp,
+  // '--help': printHelp,
+  help: printHelp,
   restart,
   run,
-  status: async () => console.log(await status()),
+  status: printStatus,
   test,
   up,
-  version: () => console.log(version())
+  '-v': printVersion,
+  '--version': printVersion,
+  version: printVersion
 }
 
 process.on('uncaughtException', err => {
