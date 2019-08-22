@@ -4,8 +4,15 @@ const webdriver = require('selenium-webdriver')
 
 const GMail = require('./sites/gmail')
 
-function Browser () {
-  const browser = new webdriver.Builder()
+const { up } = require('../../bin')
+
+let waitForHub
+
+async function Browser () {
+  waitForHub = waitForHub || up()
+  await waitForHub
+
+  const browser = await new webdriver.Builder()
     .forBrowser('chrome')
     .setChromeOptions({
       'download.default_directory': '/home/seluser/Downloads',

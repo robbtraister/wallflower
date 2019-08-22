@@ -2,102 +2,18 @@
 
 'use strict'
 
-const path = require('path')
-
-const { exec, spawn } = require('../src/utils/promises')
-
-const PROJECT_ROOT = path.resolve('.')
-const WALLFLOWER_ROOT = path.resolve(__dirname, '..')
-
-require('dotenv').config({ path: path.join(PROJECT_ROOT, '.env') })
-
-function help () {
-  version()
-  console.log(`
-  down
-  help
-  status
-  test
-  up
-  version
-`)
-}
-
-async function down (log = true) {
-  await spawn('docker-compose', ['down'], {
-    cwd: WALLFLOWER_ROOT,
-    env: {
-      ...process.env,
-      PROJECT_ROOT,
-      WALLFLOWER_ROOT
-    },
-    stdio: log ? 'inherit' : 'pipe'
-  })
-}
-
-async function status () {
-  console.log(/wallflower-hub$/m.test(await exec('docker ps')) ? 'up' : 'down')
-}
-
-async function test (...args) {
-  await down(false)
-  // spawn will throw on SIGINT
-  try {
-    await spawn(
-      'docker-compose',
-      [
-        'up',
-        '--build',
-        '--abort-on-container-exit',
-        '--exit-code-from=wallflower-chrome-test',
-        'wallflower-chrome-test'
-      ],
-      {
-        cwd: WALLFLOWER_ROOT,
-        env: {
-          ...process.env,
-          COMMAND: ['test', ...args].join(' '),
-          PROJECT_ROOT,
-          WALLFLOWER_ROOT
-        },
-        stdio: 'inherit'
-      }
-    )
-  } catch (e) {
-    // ignore SIGINT
-  } finally {
-    await down()
-  }
-}
-
-async function up () {
-  await down(false)
-  await spawn(
-    'docker-compose',
-    ['-f', 'docker-compose.yml', 'up', '--build', '-d'],
-    {
-      cwd: WALLFLOWER_ROOT,
-      env: {
-        ...process.env,
-        PROJECT_ROOT,
-        WALLFLOWER_ROOT
-      },
-      stdio: 'inherit'
-    }
-  )
-}
-
-function version () {
-  console.log(`wallflower ${require('../package.json').version}`)
-}
+const { debug, down, help, restart, run, status, test, up, version } = require('.')
 
 const commands = {
+  debug,
   down,
-  help,
-  status,
+  help: () => console.log(help()),
+  restart,
+  run,
+  status: async () => console.log(await status()),
   test,
   up,
-  version
+  version: () => console.log(version())
 }
 
 process.on('uncaughtException', err => {
@@ -106,6 +22,6 @@ process.on('uncaughtException', err => {
 
 if (module === require.main) {
   const cmd = process.argv[2]
-  const fn = commands[cmd] || help
+  const fn = commands[cmd] || commands.help
   fn.apply(null, Array.prototype.slice.call(process.argv, 3))
 }

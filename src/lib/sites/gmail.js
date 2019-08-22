@@ -3,11 +3,12 @@
 const webdriver = require('selenium-webdriver')
 const { sleep } = require('../../utils')
 
-const URL = 'http://mail.google.com/'
+const URL = 'https://mail.google.com/'
 
 const SELECTORS = {
   USERNAME: webdriver.By.name('identifier'),
   PASSWORD: webdriver.By.name('password'),
+  FORGET: webdriver.By.className('BHzsHc'),
   COMPOSE: webdriver.By.css('div[gh="cm"]'),
   DRAFT: webdriver.By.className('Hd'),
   TO: webdriver.By.css('textarea[name="to"]'),
@@ -122,6 +123,13 @@ class GMail {
     await sleep(3000)
 
     return this
+  }
+
+  async logout () {
+    await this._browser.get('https://accounts.google.com/Logout')
+    await sleep(1000)
+    await this._browser.findElement(SELECTORS.FORGET).click()
+    await sleep(1000)
   }
 }
 

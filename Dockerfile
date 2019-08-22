@@ -16,5 +16,5 @@ WORKDIR /opt/project
 COPY ./package*.json ./
 RUN npm ci
 
-ENTRYPOINT ["/bin/sh", "-c", "sleep 5 && npm run ${COMMAND:-${0:-test}}"]
+ENTRYPOINT ["/bin/sh", "-c", "npm run ${COMMAND:-${0:-test}}"]
 CMD ["test"]
