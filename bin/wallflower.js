@@ -2,7 +2,17 @@
 
 'use strict'
 
-const { debug, down, help, restart, run, status, test, up, version } = require('.')
+const {
+  debug,
+  down,
+  help,
+  restart,
+  run,
+  status,
+  test,
+  up,
+  version
+} = require('.')
 
 const commands = {
   debug,

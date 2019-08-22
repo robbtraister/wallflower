@@ -84,11 +84,10 @@ async function run (...args) {
   if (args.length === 0 || args.indexOf('--') === 0) {
     console.log('available scripts:')
     const { scripts } = require(path.join(PROJECT_ROOT, 'package.json'))
-    Object.keys(scripts)
-      .forEach((scriptName) => {
-        console.log(`  ${scriptName}`)
-        console.log(`    ${scripts[scriptName]}`)
-      })
+    Object.keys(scripts).forEach(scriptName => {
+      console.log(`  ${scriptName}`)
+      console.log(`    ${scripts[scriptName]}`)
+    })
   } else if (!IN_DOCKER) {
     // spawn will throw on SIGINT
     try {
