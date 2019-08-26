@@ -33,15 +33,16 @@ function printVersion () {
 
 const commands = {
   debug,
-  down,
+  down: () => down(true),
   // '-h': printHelp,
   // '--help': printHelp,
   help: printHelp,
-  restart,
+  reset: () => restart(true),
+  restart: () => restart(true),
   run,
   status: printStatus,
   test,
-  up,
+  up: () => up(true),
   '-v': printVersion,
   '--version': printVersion,
   version: printVersion

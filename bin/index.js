@@ -5,12 +5,13 @@ const path = require('path')
 const { sleep } = require('../src/utils')
 const { exec, request, spawn } = require('../src/utils/promises')
 
-const PROJECT_ROOT = path.resolve('.')
-const WALLFLOWER_ROOT = path.resolve(__dirname, '..')
-
-const IN_DOCKER = /^true$/i.test(process.env.IN_DOCKER)
-
-require('dotenv').config({ path: path.join(PROJECT_ROOT, '.env') })
+const {
+  HUB_HOST,
+  HUB_PORT,
+  IN_DOCKER,
+  PROJECT_ROOT,
+  WALLFLOWER_ROOT
+} = require('../env')
 
 const COLORS = {
   GREEN: '\x1b[32m',
@@ -19,24 +20,23 @@ const COLORS = {
 }
 
 const READY_STEP = 500
-const readyURL = `http://${process.env.HUB_HOST || 'localhost'}:${process.env
-  .HUB_PORT || '4444'}/wd/hub/status`
+const readyURL = `http://${HUB_HOST}:${HUB_PORT}/wd/hub/status`
 
-async function waitForReady (timeout = 20000) {
-  process.stderr.write('Waiting for selenium ... ')
+async function waitForReady ({ log, timeout = 20000 }) {
+  log && process.stderr.write('Waiting for webdriver ... ')
   for (let i = Math.ceil(timeout / READY_STEP); i > 0; i--) {
     try {
       const {
         value: { ready }
       } = await request(readyURL)
       if (ready) {
-        process.stderr.write(`${COLORS.GREEN}done${COLORS.RESET}\n`)
+        log && process.stderr.write(`${COLORS.GREEN}done${COLORS.RESET}\n`)
         return
       }
     } catch (_) {}
     await sleep(READY_STEP)
   }
-  process.stderr.write(`${COLORS.RED}timeout${COLORS.RESET}\n`)
+  log && process.stderr.write(`${COLORS.RED}timeout${COLORS.RESET}\n`)
   throw new Error('TIMEOUT')
 }
 
@@ -53,7 +53,7 @@ async function debug (...args) {
 }
 
 let startedByProcess
-async function down (log = true) {
+async function down (log = false) {
   if (!IN_DOCKER) {
     if (startedByProcess !== false) {
       await spawn('docker-compose', ['down'], {
@@ -85,9 +85,9 @@ function help () {
 `
 }
 
-async function restart () {
-  await down()
-  await up()
+async function restart (log = false) {
+  await down(log)
+  await up(log)
 }
 
 async function run (cmd, ...args) {
@@ -101,7 +101,7 @@ async function run (cmd, ...args) {
   } else if (!IN_DOCKER) {
     // spawn will throw on SIGINT
     try {
-      await up()
+      await up(true)
 
       await spawn(
         'docker-compose',
@@ -126,7 +126,7 @@ async function run (cmd, ...args) {
     } catch (e) {
       // ignore SIGINT
     } finally {
-      await down()
+      await down(true)
     }
   }
 }
@@ -139,7 +139,7 @@ async function test (...args) {
   return run('test', ...args)
 }
 
-async function up () {
+async function up (log = false) {
   if (!IN_DOCKER) {
     startedByProcess =
       startedByProcess === undefined
@@ -157,11 +157,11 @@ async function up () {
             PROJECT_ROOT,
             WALLFLOWER_ROOT
           },
-          stdio: 'inherit'
+          stdio: log ? 'inherit' : 'pipe'
         }
       )
     }
-    await waitForReady()
+    await waitForReady({ log })
   }
 }
 

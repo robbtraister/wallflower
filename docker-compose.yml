@@ -11,6 +11,7 @@ x-browser-node: &browser-node
   <<: *node
   volumes:
     - /dev/shm:/dev/shm
+    - ${PROJECT_ROOT:-.}/extensions:/opt/project/extensions:ro
 
 services:
   wallflower-hub:
