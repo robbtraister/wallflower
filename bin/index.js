@@ -194,7 +194,9 @@ process.on('exit', () => {
     childProcess.spawnSync(...downArgs())
   }
 })
-process.on('SIGINT', (signal, code) => { process.exit(code) })
+process.on('SIGINT', (signal, code) => {
+  process.exit(code)
+})
 
 module.exports = {
   debug: debugCmd,

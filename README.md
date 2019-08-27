@@ -27,24 +27,15 @@ You can use any test framework of your choosing, but the following example uses 
 const assert = require('assert')
 
 const Browser = require('wallflower')
-const { down, up } = require('wallflower/bin')
 
 describe('Browser Extension Tests', function () {
   this.timeout(30000)
-
-  before(async function startupSeleniumContainers () {
-    await up()
-  })
-
-  after(async function shutdownSeleniumContainers () {
-    await down()
-  })
 
   let browser
   beforeEach(async function openBrowser () {
     // loading extension may take a while
     this.timeout(120000)
-    browser = await Browser({ extensions: ['bp'] }) // looks in `./extensions/bp/${ENVIRONMENT_NAME}.crx`
+    browser = await Browser({ extensions: ['bp'] }) // looks at `./extensions/bp/${ENVIRONMENT_NAME}.crx`
   })
 
   afterEach(async function closeBrowser () {
