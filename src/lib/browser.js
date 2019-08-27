@@ -40,7 +40,9 @@ let waitForHub
 
 async function Browser ({ extensions = [] } = {}) {
   const IS_LOCAL = TARGET === 'local'
-  const downloadDirectory = IS_LOCAL ? path.resolve('~/Downloads') : '/home/seluser/Downloads'
+  const downloadDirectory = IS_LOCAL
+    ? path.resolve('~/Downloads')
+    : '/home/seluser/Downloads'
 
   let builder = new webdriver.Builder().forBrowser('chrome').setChromeOptions(
     new Options()
