@@ -1,6 +1,9 @@
 'use strict'
 
+const childProcess = require('child_process')
 const path = require('path')
+
+const debug = require('debug')('wallflower:bin')
 
 const { sleep } = require('../src/utils')
 const { exec, request, spawn } = require('../src/utils/promises')
@@ -23,7 +26,10 @@ const READY_STEP = 500
 const readyURL = `http://${HUB_HOST}:${HUB_PORT}/wd/hub/status`
 
 async function waitForReady ({ log, timeout = 20000 }) {
-  log && process.stderr.write('Waiting for webdriver ... ')
+  log
+    ? process.stderr.write('Waiting for webdriver ... ')
+    : debug('waiting for webdriver')
+
   for (let i = Math.ceil(timeout / READY_STEP); i > 0; i--) {
     try {
       const {
@@ -40,7 +46,7 @@ async function waitForReady ({ log, timeout = 20000 }) {
   throw new Error('TIMEOUT')
 }
 
-async function debug (...args) {
+async function debugCmd (...args) {
   const passThroughIndex = args.indexOf('--')
   if (args.length === 0 || passThroughIndex === 0) {
     args.unshift('test')
@@ -52,21 +58,29 @@ async function debug (...args) {
   return run(...args)
 }
 
-let startedByProcess
-async function down (log = false) {
-  if (!IN_DOCKER) {
-    if (startedByProcess !== false) {
-      await spawn('docker-compose', ['down'], {
-        cwd: WALLFLOWER_ROOT,
-        env: {
-          ...process.env,
-          PROJECT_ROOT,
-          WALLFLOWER_ROOT
-        },
-        stdio: log ? 'inherit' : 'pipe'
-      })
-      startedByProcess = undefined
+function downArgs (log = false) {
+  return [
+    'docker-compose',
+    ['down'],
+    {
+      cwd: WALLFLOWER_ROOT,
+      env: {
+        ...process.env,
+        PROJECT_ROOT,
+        WALLFLOWER_ROOT
+      },
+      stdio: log ? 'inherit' : 'pipe'
     }
+  ]
+}
+
+let startedByProcess
+async function down (log = false, force = false) {
+  if (IN_DOCKER) return
+
+  if (force || startedByProcess) {
+    debug('shutting down selenium containers')
+    await spawn(...downArgs(log))
   }
 }
 
@@ -98,11 +112,14 @@ async function run (cmd, ...args) {
       process.stderr.write(`  ${scriptName}\n`)
       process.stderr.write(`    ${scripts[scriptName]}\n`)
     })
-  } else if (!IN_DOCKER) {
+  } else {
+    if (IN_DOCKER) return
+
     // spawn will throw on SIGINT
     try {
       await up(true)
 
+      debug(`running npm command '${cmd}' in docker container`)
       await spawn(
         'docker-compose',
         [
@@ -139,38 +156,48 @@ async function test (...args) {
   return run('test', ...args)
 }
 
-async function up (log = false) {
-  if (!IN_DOCKER) {
+async function up (log = false, detached = false) {
+  if (IN_DOCKER) return
+
+  if (!detached) {
     startedByProcess =
       startedByProcess === undefined
         ? (await status()) === 'down'
         : startedByProcess
-
-    if (startedByProcess) {
-      await spawn(
-        'docker-compose',
-        ['-f', 'docker-compose.yml', 'up', '--build', '-d'],
-        {
-          cwd: WALLFLOWER_ROOT,
-          env: {
-            ...process.env,
-            PROJECT_ROOT,
-            WALLFLOWER_ROOT
-          },
-          stdio: log ? 'inherit' : 'pipe'
-        }
-      )
-    }
-    await waitForReady({ log })
   }
+
+  if (detached || startedByProcess) {
+    debug('starting selenium docker containers in detached mode')
+    await spawn(
+      'docker-compose',
+      ['-f', 'docker-compose.yml', 'up', '--build', '-d'],
+      {
+        cwd: WALLFLOWER_ROOT,
+        env: {
+          ...process.env,
+          PROJECT_ROOT,
+          WALLFLOWER_ROOT
+        },
+        stdio: log ? 'inherit' : 'pipe'
+      }
+    )
+  }
+  await waitForReady({ log })
 }
 
 function version () {
   return require('../package.json').version
 }
 
+process.on('exit', () => {
+  if (!IN_DOCKER && startedByProcess) {
+    childProcess.spawnSync(...downArgs())
+  }
+})
+process.on('SIGINT', (signal, code) => { process.exit(code) })
+
 module.exports = {
-  debug,
+  debug: debugCmd,
   down,
   help,
   restart,
