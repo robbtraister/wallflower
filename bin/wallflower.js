@@ -20,7 +20,6 @@ function printHelp () {
 
 async function printStatus () {
   const currentStatus = await status()
-  process.stderr.write('wallflower status: ')
   process.stdout.write(currentStatus)
   process.stderr.write('\n')
 }

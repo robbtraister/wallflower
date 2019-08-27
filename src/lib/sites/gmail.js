@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug')('wallflower:gmail')
 const webdriver = require('selenium-webdriver')
 
 const URL = 'https://mail.google.com/'
@@ -114,18 +115,25 @@ class GMail {
   }
 
   async login ({ username, password }) {
+    debug(`Logging into gmail as: ${username}`)
     await this._browser.get(URL)
 
+    debug('Waiting for username element')
     const usernameInput = await this._browser.wait(
       webdriver.until.elementLocated(SELECTORS.USERNAME)
     )
+    debug('Found username element')
     await usernameInput.sendKeys(username, webdriver.Key.RETURN)
+    debug(`Entered username: ${username}`)
     await this._browser.wait(webdriver.until.stalenessOf(usernameInput))
 
+    debug('Waiting for password element')
     const passwordInput = await this._browser.wait(
       webdriver.until.elementLocated(SELECTORS.PASSWORD)
     )
+    debug('Found password element')
     await passwordInput.sendKeys(password, webdriver.Key.RETURN)
+    debug('Entered password')
     await this._browser.wait(webdriver.until.stalenessOf(passwordInput))
 
     return this

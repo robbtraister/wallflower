@@ -11,6 +11,7 @@ services:
       - wallflower-chrome-node
     environment:
       COMMAND:
+      DEBUG:
       HUB_HOST: wallflower-hub
       HUB_PORT: 4444
     ports:

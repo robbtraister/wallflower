@@ -3,6 +3,7 @@
 const fs = require('fs')
 const path = require('path')
 
+const debug = require('debug')('wallflower:browser')
 const webdriver = require('selenium-webdriver')
 const { Options } = require('selenium-webdriver/chrome')
 
@@ -20,6 +21,7 @@ const {
 } = require('../../env')
 
 async function loadExtension (extensionName) {
+  debug(`Reading extension: ${extensionName}`)
   const extensionFile = path.join(
     IN_DOCKER ? '/opt/project' : PROJECT_ROOT,
     'extensions',
@@ -28,6 +30,7 @@ async function loadExtension (extensionName) {
   )
   return new Promise((resolve, reject) => {
     fs.readFile(extensionFile, (err, data) => {
+      debug(`Sending extension: ${extensionName}`)
       err ? reject(err) : resolve(data.toString('base64'))
     })
   })
@@ -36,23 +39,28 @@ async function loadExtension (extensionName) {
 let waitForHub
 
 async function Browser ({ extensions = [] } = {}) {
+  const IS_LOCAL = TARGET === 'local'
+  const downloadDirectory = IS_LOCAL ? path.resolve('~/Downloads') : '/home/seluser/Downloads'
+
   let builder = new webdriver.Builder().forBrowser('chrome').setChromeOptions(
     new Options()
       .setUserPreferences({
-        'download.default_directory': '/home/seluser/Downloads',
+        'download.default_directory': downloadDirectory,
         'download.prompt_for_download': false,
         'extensions.ui.developer_mode': true,
-        'savefile.default_directory': '/home/seluser/Downloads'
+        'savefile.default_directory': downloadDirectory
       })
       .addExtensions(
         await Promise.all([].concat(extensions || []).map(loadExtension))
       )
   )
 
-  if (TARGET === 'local') {
+  if (!IS_LOCAL) {
+    debug('Waiting for selenium hub')
     waitForHub = waitForHub || up()
     await waitForHub
 
+    debug('Using selenium server')
     builder = builder.usingServer(
       // if run in host, access hub at `localhost:4444`
       // if run in container, use env variable overrides to access hub container
