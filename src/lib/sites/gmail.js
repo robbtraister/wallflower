@@ -56,16 +56,19 @@ class Draft {
   }
 
   async discard () {
+    debug('Clicking draft discard button')
     await this._element.findElement(SELECTORS.DISCARD).click()
     return this
   }
 
   async send () {
+    debug('Clicking draft send button')
     await this._element.findElement(SELECTORS.SEND).click()
     return this
   }
 
   async setBody (body) {
+    debug('Setting draft body')
     await this._element
       .findElement(SELECTORS.BODY)
       .sendKeys(body, webdriver.Key.RETURN)
@@ -73,6 +76,7 @@ class Draft {
   }
 
   async setSubject (subject) {
+    debug(`Setting draft subject ${subject}`)
     await this._element
       .findElement(SELECTORS.SUBJECT)
       .sendKeys(subject, webdriver.Key.RETURN)
@@ -80,6 +84,7 @@ class Draft {
   }
 
   async setTo (to) {
+    debug(`Setting draft recipient: ${to}`)
     await this._element
       .findElement(SELECTORS.TO)
       .sendKeys(to, webdriver.Key.RETURN)
@@ -97,15 +102,19 @@ class GMail {
   }
 
   async compose (...args) {
+    debug('Waiting for compose button')
     const composeButton = await this._browser.wait(
       webdriver.until.elementLocated(SELECTORS.COMPOSE)
     )
+    debug('Clicking compose button')
     await composeButton.click()
 
+    debug('Waiting for draft window')
     const draftElement = await this._browser.wait(
       webdriver.until.elementLocated(SELECTORS.DRAFT)
     )
     const draft = new this.constructor.Draft(this, draftElement)
+    debug('Initializing draft fields')
     return draft.init(...args)
   }
 
