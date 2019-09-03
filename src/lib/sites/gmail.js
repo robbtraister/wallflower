@@ -3,6 +3,8 @@
 const debug = require('debug')('wallflower:gmail')
 const webdriver = require('selenium-webdriver')
 
+const Base = require('./base')
+
 const URL = 'https://mail.google.com/'
 
 const SELECTORS = {
@@ -92,25 +94,17 @@ class Draft {
   }
 }
 
-class GMail {
-  constructor (...args) {
-    return this.init(...args)
-  }
-
-  get browser () {
-    return this._browser
-  }
-
+class GMail extends Base {
   async compose (...args) {
     debug('Waiting for compose button')
-    const composeButton = await this._browser.wait(
+    const composeButton = await this.browser.wait(
       webdriver.until.elementLocated(SELECTORS.COMPOSE)
     )
     debug('Clicking compose button')
     await composeButton.click()
 
     debug('Waiting for draft window')
-    const draftElement = await this._browser.wait(
+    const draftElement = await this.browser.wait(
       webdriver.until.elementLocated(SELECTORS.DRAFT)
     )
     const draft = new this.constructor.Draft(this, draftElement)
@@ -119,44 +113,50 @@ class GMail {
   }
 
   async init ({ browser, username, password }) {
-    this._browser = browser || (await require('../browser')())
-    return this.login({ username, password })
+    await super.init({ browser })
+    return username ? this.login({ username, password }) : this
   }
 
   async login ({ username, password }) {
     debug(`Logging into gmail as: ${username}`)
-    await this._browser.get(URL)
 
     debug('Waiting for username element')
-    const usernameInput = await this._browser.wait(
+    const usernameInput = await this.browser.wait(
       webdriver.until.elementLocated(SELECTORS.USERNAME)
     )
     debug('Found username element')
     await usernameInput.sendKeys(username, webdriver.Key.RETURN)
     debug(`Entered username: ${username}`)
-    await this._browser.wait(webdriver.until.stalenessOf(usernameInput))
+    await this.browser.wait(webdriver.until.stalenessOf(usernameInput))
 
     debug('Waiting for password element')
-    const passwordInput = await this._browser.wait(
+    const passwordInput = await this.browser.wait(
       webdriver.until.elementLocated(SELECTORS.PASSWORD)
     )
     debug('Found password element')
     await passwordInput.sendKeys(password, webdriver.Key.RETURN)
     debug('Entered password')
-    await this._browser.wait(webdriver.until.stalenessOf(passwordInput))
+    await this.browser.wait(webdriver.until.stalenessOf(passwordInput))
 
     return this
   }
 
   async logout () {
-    await this._browser.get('https://accounts.google.com/Logout')
-    const forgetButton = await this._browser.wait(
+    await this.browser.get('https://accounts.google.com/Logout')
+    const forgetButton = await this.browser.wait(
       webdriver.until.elementLocated(SELECTORS.FORGET)
     )
     await forgetButton.click()
-    await this._browser.wait(webdriver.until.stalenessOf(forgetButton))
+    await this.browser.wait(webdriver.until.stalenessOf(forgetButton))
+  }
+
+  static get Draft () {
+    return Draft
+  }
+
+  static get URL () {
+    return URL
   }
 }
 
-GMail.Draft = Draft
 module.exports = GMail

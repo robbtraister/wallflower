@@ -7,7 +7,7 @@ const debug = require('debug')('wallflower:browser')
 const webdriver = require('selenium-webdriver')
 const { Options } = require('selenium-webdriver/chrome')
 
-const GMail = require('./sites/gmail')
+const sites = require('./sites')
 
 const { up } = require('../../bin')
 
@@ -72,7 +72,11 @@ async function Browser ({ extensions = [] } = {}) {
 
   const browser = await builder.build()
 
-  browser.gmail = ({ ...args }) => new GMail({ browser, ...args })
+  Object.keys(sites)
+    .forEach((siteName) => {
+      const Site = sites[siteName]
+      browser[siteName] = ({ ...args }) => new Site({ browser, ...args })
+    })
 
   return browser
 }
